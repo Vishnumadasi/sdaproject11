@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Predictor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            line-height: 1.6;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Airbnb Country Prediction</h2>
+        <label for="userId">Enter User ID:</label>
+        <input type="text" id="userId" placeholder="Enter user ID" required>
+        
+        <label for="modelSelect">Choose a Model:</label>
+        <select id="modelSelect">
+            <option value="model1">Gradient Boost</option>
+            <option value="model2">XGBoost</option>
+        </select>
+        
+        <button id="predictBtn">Predict</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const predictBtn = document.getElementById('predictBtn');
+        const resultDiv = document.getElementById('result');
+
+        predictBtn.addEventListener('click', async () => {
+            const selectedModel = document.getElementById('modelSelect').value;
+            const userId = document.getElementById('userId').value.trim();
+
+            
+            if (!userId) {
+                alert('Please enter a valid User ID');
+                document.getElementById('userId').focus();
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="loading">Fetching prediction...</div>';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: selectedModel, user_id: userId })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.result) {
+                    const predictions = data.result.map(
+                        item => `<p><strong>${item.country}:</strong> ${item.probability.toFixed(2)}</p>`
+                    ).join('');
+                    resultDiv.innerHTML = `<strong>Predictions:</strong>${predictions}`;
+                } else {
+                    resultDiv.innerText = data.error || 'No data found or an error occurred.';
+                }
+            } catch (error) {
+                console.error('Error fetching prediction:', error);
+                resultDiv.innerText = 'An error occurred while fetching the prediction.';
+            }
+        });
+    </script>
+</body>
+</html>
